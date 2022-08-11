@@ -1,0 +1,169 @@
+8/10
+persistent volume
+1.volume space pv store values
+2.volume claim pvc specific requirements
+3.storage class define details and where will it be stored
+
+static local one node
+dynamic multiple nodes
+
+create efs
+efs-provisoner github
+
+Download the repository
+git clone https://github.com/kubernetes-incubator/external-storage
+
+Switch to the deploy directory
+cd external-storage/aws/efs/deploy/
+
+Apply rbac permissions
+kubectl apply -f rbac.yaml
+
+Modify manifest.yaml.In the configmap section change the file.system.id:
+and aws.region: to match details of the EFS you created. Change dns.name if you want to mount by your own DNS name and not AWS's file.system-id*.efs.*aws-regions*.amazonaws.com
+
+In the deployment section change the server: to the DNS endpoint of the EFS YOU created
+
+Apply the manifest
+
+sudo mani.yaml
+
+kubectl -create mani.yaml
+
+kubectl get pvc
+
+kubectl get pods
+
+kubectl get pvc
+
+nano p1.yaml
+copy and paste deploymentpv.yaml
+
+kubectl apply -f p1.yaml
+
+kubectl exec -it pod-name -- bash
+
+touch /tmp/persistent/data
+ls /tmp/persistent
+data
+
+ctrl d out of root
+
+kubectl delete pods pod-name
+
+kubectl get pods
+
+kubectl exec -it new pod-name -- bash
+
+ls /tmp/persistent
+
+Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pv-deploy
+spec:
+  replicas: 1
+  selector:
+    matchlabels:
+      app: mypv
+  template:
+    metadata:
+      labels:
+        app: mypve
+    spec:
+      containers:
+      - name: shell
+        image: centos:7
+        command:
+        - "bin/bash"
+        - "-c"
+        - "sleep 10000"
+        volumeMounts:
+        - name: mypd
+          mountPath: "/tmp/persistent"
+      volumes:
+      - name: mypd
+        persistentVolumeClaim:
+          claimName: efs
+         
+
+
+imp_manifest
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: efs-provisioner
+data:
+  file.system.id: fs-e4413b65
+  aws.region: us-east-1
+  provisoner.name: example.com/aws.efs
+  dns.name: ""
+  ---
+  apiVersion: v1
+  Kind: ServiceAccount
+  metadata:
+    name: efs-provisioner
+---
+Kind: Deployment
+apiversion: apps/v1
+metadata:
+  name: efs-provisioner
+spec
+  replicas: 1
+  selector:
+    matchlabels:
+      app: efs-provisioner
+ 
+  strategy
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        app: efs-provisioner
+    spec:
+      serviceAccount: efs-provisioner
+      containers:
+        -name: efs-provisione
+         image: quay.io/externa_storage/efs-provisioner:latest
+         env:
+           - name: FILE_SYSTEM_ID
+             valueFrom:
+               configMapKeyRef:
+                 name: efs-provisoner
+                 key: aws.region
+            -name: DNS_NAME
+             valueFrom:
+               configMapKeyRef:
+                 name: efs-provisioner
+                 key: provisoner.name
+          volumeMounts:
+            - name: pv-volume
+              mountPath: /persistentvolumes
+      volumes:
+        - name: pv-volume
+          nfs:
+            server: fs-e4413b65.efs.us-east-1.amazonaws.com
+            path: /
+---
+Kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: aws-efs
+provisioner: example.com/aws-efs
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: efs
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "aws-efs"
+spec:
+  accessModes:
+    -ReadWriteMany
+  resources:
+    requests:
+      storage: 1Mi
+---
