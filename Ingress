@@ -1,0 +1,137 @@
+
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/baremetal/service-nodeport.yaml
+
+verify
+kubectl get pods --all-namespaces -1 app.kubernetes.io/name=ingress-nginx --watch
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: apple-app
+  labels:
+    app: apple
+spec:
+  containers:
+    - name: apple-app
+      image: hashicorp/http-echo
+      args:
+        - "-text-apple"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: apple-service
+spec:
+  selector:
+    app: apple
+  ports:
+    - port: 5678 # default port for image
+
+
+Kind: Pod
+apiVersion: v1
+metadata: 
+  name: banana-app
+  labels:
+    app: banana
+  spec:
+    containers:
+      - name: banana-app
+        image: hashicorp/http-echo
+        args:
+          - "-text=banana"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: banana-service
+spec:
+  selector:
+    app: banana
+  ports:
+    - port: 5678 # default port for image
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-targe: /
+spec:
+  rules:
+  - http:
+      paths:
+        - path: /apple
+          backend:
+            serviceName: apple-service
+            servicePort: 5678
+         - path: /banana
+           backend:
+             serviceName: banana-service
+             servicePort: 5678
+
+nano apple.yaml
+
+nano banana.yaml
+
+kubectl create -f apple.yaml
+banana.yaml
+
+nano ingress.yaml
+
+kubectl create -f ingress.yaml
+
+curl localhost/apple
+
+kubectl get svc
+
+kubectl get svc --all-namespaces
+
+ip address of the master:30328
+
+https://ip address master:30328/apple
+
+https://ip address master:30328/banana
+
+https://ip address master:30328/pearl
+
+virtual routing
+
+Cloud Native Security
+
+Dashboard Setup
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+
+kubectl svc --all-namespaces
+
+kubectl edit svc kubernetes-dashboard -n kubernetes-dashboard
+type: NodePort 
+press insert to edit
+ctr c
+:wq
+
+firefox
+
+https://ip:port
+
+#Create a service account
+
+kubectl create serviceaccount cluster-admin-dashboard-sa
+
+#Bind ClusterAdmin role to the service account
+
+kubectl create clusterrolebinding cluster-admin-dashboard-sa\
+ -clusterrole=cluster-admin\
+ -serviceaccount=default:cluster-admin-dashboard-sa
+
+# Parse the token
+TOKEN=$(kubectl describe secret $(kubectl-n kube-system get secret | awsk'/^cluster-admin-dashboard-sa-token-/{print $1=="token:"{print $2}')
+
+echo $TOKEN
+copy & paste in dashboard
+
+nginx deployment yaml
+upload from dashboard
